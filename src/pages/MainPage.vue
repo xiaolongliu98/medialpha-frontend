@@ -8,16 +8,7 @@
             </div>
          </el-col>
          <el-col :span="6">
-<!--            <el-input-->
-<!--               v-model="search.content"-->
-<!--               size="default"-->
-<!--               placeholder="输入关键词"-->
-<!--               :prefix-icon="Search"-->
-<!--               :maxlength="100"-->
-<!--               style="height: 40px; width: 295px"-->
-<!--               clearable-->
-<!--            />-->
-            <SearchInput v-model="search.content"/>
+            <SearchInput v-model="search.content" placeholder="搜索视频"/>
          </el-col>
       </el-row>
 

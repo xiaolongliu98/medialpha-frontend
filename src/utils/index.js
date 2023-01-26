@@ -58,3 +58,8 @@ export function formatSize(size) {
     }
     return size.toFixed(2) + unit
 }
+
+export function formatBitRate(rate) {
+    rate = rate / 1024 //KB
+    return rate.toFixed(2) + "KB/s"
+}

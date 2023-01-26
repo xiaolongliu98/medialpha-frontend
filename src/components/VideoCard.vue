@@ -1,9 +1,24 @@
 <template>
    <el-card class="card">
-      <el-image :src="coverURL" class="image"/>
-      <div class="title" ref="title">
-         {{video.Name}}
-      </div>
+      <el-image :src="coverURL" class="image" @click="handleClick"/>
+
+      <el-popover
+         placement="bottom"
+         :offset="-35"
+         title=""
+         :width="240"
+         trigger="hover"
+         :content="video.Name"
+         :show-arrow="false"
+         popper-style="background-color: #21252b; border: 0px; color: white"
+      >
+         <template #reference>
+            <div class="title" ref="title">
+               {{video.Name}}
+            </div>
+         </template>
+      </el-popover>
+
       <div class="info" style="margin-top: 10px">
          时长：{{formatTime.hour}}:{{formatTime.minute}}:{{formatTime.second}}
       </div>
@@ -52,18 +67,25 @@ export default {
    data() {
       return {
 
-         formatTime: parseSeconds(this.video.Duration),
-         formatSize: formatSize(this.video.Size),
       }
    },
    mounted() {
    },
    methods: {
+      handleClick() {
+         this.$router.push("/video/" + this.video.ID)
+      },
    },
    computed: {
       coverURL() {
          return `${baseURL}/cover?id=${this.video.ID}`
       },
+      formatSize() {
+         return formatSize(this.video.Size)
+      },
+      formatTime() {
+         return parseSeconds(this.video.Duration)
+      }
    }
 }
 </script>
@@ -74,11 +96,12 @@ export default {
    width: 280px;
    border: 0px;
    background-color: #373c44;
-   cursor: pointer;
+
 }
 .image {
    width: 100%;
    background-color: #333333;
+   cursor: pointer;
 }
 
 .title {

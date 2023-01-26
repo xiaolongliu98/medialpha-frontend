@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from "vue-router";
 import MainPage from "@/pages/MainPage";
+import VideoPage from "@/pages/VideoPage";
 
 
 const router = createRouter({
@@ -7,6 +8,7 @@ const router = createRouter({
     routes:[
         {name: 'default', path: '/', redirect: '/main', },
         {name: "main", path: '/main', component: MainPage},
+        {name: "video", path: '/video/:id', component: VideoPage},
     ]
 })
 

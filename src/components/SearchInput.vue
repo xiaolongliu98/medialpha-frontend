@@ -2,7 +2,7 @@
 
    <div class="outer" ref="outer">
 
-      <div class="search">
+      <div class="search-icon">
          <el-icon><Search /></el-icon>
       </div>
 
@@ -12,8 +12,13 @@
              @focusout="inputFocusOut"
              @input="handleInput"
              :value="modelValue"
+             :placeholder="placeholder"
+             :maxlength="maxlength"
       />
 
+      <div class="search-button" v-if="modelValue" @click="handleSearch">
+         搜索
+      </div>
       <div class="clear" v-if="modelValue" @click="handleClear">
          <el-icon style=""><Close /></el-icon>
       </div>
@@ -29,7 +34,9 @@ import { Close, Search } from '@element-plus/icons-vue'
 export default {
    name: "SearchInput",
    props: {
-      modelValue: {type: String}
+      modelValue: {type: String},
+      placeholder: {type: String},
+      maxlength: {type: Number, default: () => 100}
    },
    data() {
       return {
@@ -37,13 +44,20 @@ export default {
    },
    methods: {
       handleInput(e) {
+
          this.$emit('update:modelValue', e.target.value)
       },
       inputFocusIn() {
          this.$refs.outer.style.outline = '2px solid #00aeec'
       },
       inputFocusOut() {
-         this.$refs.outer.style.outline = ''
+         try {
+            this.$refs.outer.style.outline = ''
+         } catch {
+            // none
+         }
+
+
       },
       handleClear() {
          this.$emit('update:modelValue', "")
@@ -65,20 +79,23 @@ export default {
    position: relative;
 }
 input {
-   width:92%;
+   width:75%;
    height:35px;
    background-color: #373c44;
    color: white;
    border: 0px;
    outline: none;
-   margin-left: 5px;
+   margin-left: -5px;
+   margin-top: 1px;
+
+   font-size: 16px;
 }
 .clear {
    position: absolute;
    right: 9px;
    top: 7px;
-   color: white;
    background-color: #616167;
+   color: #d0d0d0;
    /*outline: 1px red solid;*/
    width: 26px;
    height: 26px;
@@ -91,12 +108,12 @@ input {
    cursor: pointer;
 }
 
-.search {
+.search-icon {
    position: absolute;
    left: 9px;
    top: 7px;
-   color: white;
    background-color: #373c44;
+   color: #d0d0d0;
    /*outline: 1px red solid;*/
    width: 26px;
    height: 26px;
@@ -105,5 +122,26 @@ input {
    display: flex;
    justify-content: center;
    align-items: center;
+}
+.search-button {
+   position: absolute;
+   right: 40px;
+   top: 7px;
+
+   width: 52px;
+   height: 26px;
+   border-radius: 13px;
+
+   color: #d0d0d0;
+   font-size: 14px;
+   background-color: #616167;
+   /*outline: 1px red solid;*/
+
+
+   display: flex;
+   justify-content: center;
+   align-items: center;
+
+   cursor: pointer;
 }
 </style>

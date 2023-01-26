@@ -6,3 +6,10 @@ export function getVideosPage({page}) {
         url: `/videos?page=${page}`,
     })
 }
+
+export function getVideo({id}) {
+    return req({
+        method: 'GET',
+        url: `/video?id=${id}`,
+    })
+}

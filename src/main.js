@@ -10,13 +10,16 @@ import store from "@/store";
 // 引入mavon-editer
 // import mavonEditor from 'mavon-editor'
 // import 'mavon-editor/dist/css/index.css'
-
+// 引入vue-mini-player
+import vue3videoPlay from "vue3-video-play"; // 引入组件
+import "vue3-video-play/dist/style.css"; // 引入css
 
 const app = createApp(App)
 // 申明使用插件
 app.use(ElementPlus)
     .use(router)
     .use(store)
+    .use(vue3videoPlay)
     // .use(mavonEditor)
 
 app.config.warnHandler = () => null;

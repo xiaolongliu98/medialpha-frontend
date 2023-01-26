@@ -22,7 +22,7 @@ export default {
 #div-inner {
    width: 1280px;
    /*width: 100%;*/
-
+   /*outline: 1px skyblue solid;*/
 }
 body {
    background-color: #21252b;
