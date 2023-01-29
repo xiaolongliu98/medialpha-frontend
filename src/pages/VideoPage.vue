@@ -66,7 +66,7 @@ export default {
    },
    methods: {
       async getVideo() {
-         let resp = await api.video.getVideo({id: this.id})
+         let resp = await api.video.get({id: this.id})
          try {
             if (resp.status !== 200) {
                throw new Error(resp.data.message)

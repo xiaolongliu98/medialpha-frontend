@@ -1,6 +1,6 @@
 <template>
 
-   <div class="outer" ref="outer">
+   <div class="card" ref="outer" @click="handleOuterClick">
 
       <div class="search-icon">
          <el-icon><Search /></el-icon>
@@ -14,6 +14,7 @@
              :value="modelValue"
              :placeholder="placeholder"
              :maxlength="maxlength"
+             @keydown="handleInputKeyDown"
       />
 
       <div class="search-button" v-if="modelValue" @click="handleSearch">
@@ -43,9 +44,25 @@ export default {
       }
    },
    methods: {
+      handleOuterClick() {
+         this.$refs.input.focus()
+      },
+      handleInputKeyDown(e) {
+         if (e.key !== 'Enter') {
+            return true
+         }
+         this.handleSearch()
+         return true
+      },
+      handleSearch() {
+         this.$emit('search')
+      },
       handleInput(e) {
-
-         this.$emit('update:modelValue', e.target.value)
+         let val = e.target.value
+         this.$emit('update:modelValue', val)
+         if (!val) {
+            this.$emit('clear')
+         }
       },
       inputFocusIn() {
          this.$refs.outer.style.outline = '2px solid #00aeec'
@@ -61,6 +78,7 @@ export default {
       },
       handleClear() {
          this.$emit('update:modelValue', "")
+         this.$emit('clear')
          this.$refs.input.focus()
       },
    },
@@ -68,7 +86,7 @@ export default {
 </script>
 
 <style scoped>
-.outer {
+.card {
    width:295px;
    height:40px;
    border-radius: 20px;
@@ -76,6 +94,7 @@ export default {
    display: grid;
    justify-content: center;
 
+   cursor: text;
    position: relative;
 }
 input {

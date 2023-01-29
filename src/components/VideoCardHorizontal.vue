@@ -8,7 +8,7 @@
 
             <el-popover
                placement="bottom"
-               :offset="-35"
+               :offset="-56"
                title=""
                :width="360"
                trigger="hover"
@@ -24,7 +24,7 @@
             </el-popover>
 
             <div class="info" style="margin-top: 10px">
-               时长：{{ formatTime.hour }}:{{ formatTime.minute }}:{{ formatTime.second }}
+               时长：{{ formatDuration.hour }}:{{ formatDuration.minute }}:{{ formatDuration.second }}
             </div>
             <div class="info">
                尺寸：{{ video.Width }}×{{ video.Height }}
@@ -46,6 +46,9 @@
             </div>
             <div class="info">
                位置：{{ video.Location }}
+            </div>
+            <div class="info">
+               修改时间：{{ formatTime }}
             </div>
 
          </el-col>
@@ -96,16 +99,42 @@ export default {
    },
    computed: {
       coverURL() {
-         return `${baseURL}/cover?id=${this.video.ID}`
+         if (!this.video.ID) {
+            return ""
+         }
+         return `${baseURL}/common/cover?name=${this.video.Name}&location=${this.video.Location}`
       },
       formatSize() {
          return formatSize(this.video.Size)
       },
-      formatTime() {
+      formatDuration() {
          return parseSeconds(this.video.Duration)
       },
       formatBitRate() {
          return formatBitRate(this.video.BitRate)
+      },
+      formatTime() {
+         let res = ""
+         let timeLast = new Date(this.video.UpdateTime)
+         let timeNow = new Date(Date.now())
+
+         if (this.video.UpdateTime === 0) {
+            return " - "
+         }
+
+         if (timeNow.getTime() - this.video.UpdateTime <= 1000*60) {
+            return "刚刚"
+         }
+
+         if (timeLast.getDay() === timeNow.getDay()) {
+            res = "今天 "
+         } else if (timeLast.getDay() + 1 === timeNow.getDay()) {
+            res = "昨天 "
+         } else {
+            res = timeLast.toLocaleDateString() + " "
+         }
+         res += timeLast.toLocaleTimeString()
+         return res.substring(0, res.length-3)
       },
    }
 }

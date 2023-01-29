@@ -1,12 +1,14 @@
 <template>
-   <el-card class="card">
-      <el-image :src="coverURL" class="image" @click="handleClick"/>
+   <div class="card">
+      <div @click="handleClick">
+         <el-image :src="coverURL" class="image"/>
+      </div>
 
       <el-popover
          placement="bottom"
          :offset="-35"
          title=""
-         :width="240"
+         :width="256"
          trigger="hover"
          :content="video.Name"
          :show-arrow="false"
@@ -14,24 +16,27 @@
       >
          <template #reference>
             <div class="title" ref="title">
-               {{video.Name}}
+               {{ video.Name }}
             </div>
          </template>
       </el-popover>
 
-      <div class="info" style="margin-top: 10px">
-         时长：{{formatTime.hour}}:{{formatTime.minute}}:{{formatTime.second}}
+      <div style="position: absolute; bottom: 8px">
+         <div class="info" style="margin-top: 10px">
+            时长：{{ formatDuration.hour }}:{{ formatDuration.minute }}:{{ formatDuration.second }}
+         </div>
+         <div class="info">
+            尺寸：{{ video.Width }}×{{ video.Height }}
+         </div>
+         <div class="info">
+            大小：{{ formatSize }}
+         </div>
+         <div class="info">
+            观看：{{ formatTime }}
+         </div>
       </div>
-      <div class="info">
-         尺寸：{{video.Width}}×{{video.Height}}
-      </div>
-      <div class="info">
-         大小：{{formatSize}}
-      </div>
-      <div class="info" v-if="video.LastViewTime !== 0">
-         观看：{{new Date(video.LastViewTime).toLocaleDateString()}}
-      </div>
-   </el-card>
+
+   </div>
 
 </template>
 
@@ -65,9 +70,7 @@ export default {
       },
    },
    data() {
-      return {
-
-      }
+      return {}
    },
    mounted() {
    },
@@ -78,14 +81,40 @@ export default {
    },
    computed: {
       coverURL() {
-         return `${baseURL}/cover?id=${this.video.ID}`
+         if (!this.video.ID) {
+            return ""
+         }
+         return `${baseURL}/common/cover?name=${this.video.Name}&location=${this.video.Location}`
       },
       formatSize() {
          return formatSize(this.video.Size)
       },
-      formatTime() {
+      formatDuration() {
          return parseSeconds(this.video.Duration)
-      }
+      },
+      formatTime() {
+         let res = ""
+         let timeLast = new Date(this.video.LastViewTime)
+         let timeNow = new Date(Date.now())
+
+         if (this.video.LastViewTime === 0) {
+            return " - "
+         }
+
+         if (timeNow.getTime() - this.video.LastViewTime <= 1000*60) {
+            return "刚刚"
+         }
+
+         if (timeLast.getDay() === timeNow.getDay()) {
+            res = "今天 "
+         } else if (timeLast.getDay() + 1 === timeNow.getDay()) {
+            res = "昨天 "
+         } else {
+            res = timeLast.toLocaleDateString() + " "
+         }
+         res += timeLast.toLocaleTimeString()
+         return res.substring(0, res.length-3)
+      },
    }
 }
 </script>
@@ -93,13 +122,19 @@ export default {
 <style scoped>
 .card {
    /*outline: 1px grey solid;*/
-   width: 280px;
+   height: 268px;
+   width: 256px;
    border: 0px;
    background-color: #373c44;
+   padding: 8px;
+   border-radius: 5px;
 
+   position: relative;
 }
+
 .image {
-   width: 100%;
+   width: 256px;
+   height: 144px;
    background-color: #333333;
    cursor: pointer;
 }
@@ -114,6 +149,7 @@ export default {
    color: #c9c9c9;
    /*outline: solid 1px #42b983;*/
 }
+
 .info {
    color: #ababab;
    font-size: 12px;
