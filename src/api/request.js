@@ -4,6 +4,7 @@ import axios from "axios";
 
 export const baseURL = {
     local: 'http://localhost:8081/v1',
+    prod: location.origin + "/v1"
 }['local']
 
 const req = axios.create({

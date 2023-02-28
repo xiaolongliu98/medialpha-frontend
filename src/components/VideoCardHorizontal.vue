@@ -2,7 +2,10 @@
    <div class="container">
       <el-row>
          <el-col :span="14">
-            <el-image :src="coverURL" class="image" @click="handleClick"/>
+            <el-image :src="coverURL" class="image" @click="handleClick" @error="handleImgError"/>
+            <div class="reload" @click="handleReloadImg" v-if="showImgReloadBtn">
+               <el-icon><Refresh /></el-icon>
+            </div>
          </el-col>
          <el-col :span="10">
 
@@ -30,10 +33,10 @@
                尺寸：{{ video.Width }}×{{ video.Height }}
             </div>
             <div class="info">
-               大小：{{ formatSize }}
+               大小：{{ formatSizeX }}
             </div>
             <div class="info">
-               码率：{{ formatBitRate }}
+               码率：{{ formatBitRateX }}
             </div>
             <div class="info">
                帧率：{{ video.FrameRate }}
@@ -58,11 +61,20 @@
 
 </template>
 
+<script setup>
+// eslint-disable-next-line no-unused-vars
+import {Refresh} from '@element-plus/icons-vue'
+</script>
+
 <script>
 
 import {baseURL} from "@/api/request";
 // eslint-disable-next-line no-unused-vars
 import {formatBitRate, formatSize, parseSeconds} from "@/utils";
+import {Base64} from "js-base64";
+import api from "@/api";
+import {ElMessage} from "element-plus";
+import {RESP_OK} from "@/consts";
 
 export default {
    name: "VideoCard",
@@ -88,29 +100,53 @@ export default {
       },
    },
    data() {
-      return {}
+      return {
+         showImgReloadBtn: false,
+      }
    },
    mounted() {
    },
    methods: {
+      handleImgError() {
+         this.showImgReloadBtn = true
+         // console.log("加载失败")
+      },
       handleClick() {
          this.$router.push("/video/" + this.video.ID)
+      },
+      handleReloadImg() {
+         this.showImgReloadBtn = false
+         api.common.reloadCover({
+            id: this.video.ID
+         }).then(resp => {
+            if (resp.data.code !== RESP_OK) {
+               throw new Error(resp.data.message)
+            }
+            this.$router.go(0)
+         }).catch(e => {
+           ElMessage.error(e.message)
+         })
+         this.showImgReloadBtn = true
       },
    },
    computed: {
       coverURL() {
-         if (!this.video.ID) {
+         if (!this.video.ID || !this.video.ID.length) {
             return ""
          }
-         return `${baseURL}/common/cover?name=${this.video.Name}&location=${this.video.Location}`
+         let name = Base64.encode(this.video.Name)
+         let loc = Base64.encode(this.video.Location)
+         // let name = this.video.Name
+         // let loc = this.video.Location
+         return `${baseURL}/common/cover?name=${name}&location=${loc}`
       },
-      formatSize() {
+      formatSizeX() {
          return formatSize(this.video.Size)
       },
       formatDuration() {
          return parseSeconds(this.video.Duration)
       },
-      formatBitRate() {
+      formatBitRateX() {
          return formatBitRate(this.video.BitRate)
       },
       formatTime() {
@@ -149,11 +185,11 @@ export default {
 
 
 .image {
-   /*width: 100%;*/
+   width: 462px;
    height: 260px;
    background-color: #333333;
    /*cursor: pointer;*/
-   outline: 2px solid #000000;
+   /*outline: 2px solid #ff0000;*/
 }
 
 .title {
@@ -172,5 +208,21 @@ export default {
    font-size: 14px;
    margin-top: 3px;
    text-align: left;
+}
+.reload {
+   position: absolute;
+   left: 211px;
+   top: 80px;
+   width: 40px;
+   height: 40px;
+   /*outline: 1px violet solid;*/
+
+   display: flex;
+   justify-content: center;
+   justify-items: center;
+   align-items: center;
+
+   color: #6c6c6c;
+   cursor: pointer;
 }
 </style>

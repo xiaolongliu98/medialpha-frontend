@@ -16,43 +16,81 @@
       </div>
       <!--   ========================================================   -->
       <div :class="{active: actives[`-1`]}"
-           class="btn operator"
+           class="btn operator btn-left"
            v-if="pathElems.length > 1"
            @mouseenter="handleMouseEnter($event, -1)"
            @mouseleave="handleMouseLeave($event, -1)"
            @click="handleBreadClick(-1)"
            :ref="`btn-1`"
-           style="margin-left: 10px; border-radius: 3px 0px 0px 3px;"
       >
          <span style="padding: 20px; font-size: 16px; color: #ffffff;">
             <el-icon><Back /></el-icon>
          </span>
       </div>
-      <div class="btn operator"
-           :class="{active: actives[`-2`]}"
+      <div class="btn operator btn-mid"
+           :class="{active: actives[`-2`], }"
            v-if="pathElems.length > 1"
            @mouseenter="handleMouseEnter($event, -2)"
            @mouseleave="handleMouseLeave($event, -2)"
            @click="handleBreadClick(-2)"
            :ref="`btn-2`"
-           style="margin-left: 1px; border-radius: 0px 3px 3px 0px;"
       >
          <span style="padding: 20px; font-size: 16px; color: #ffffff;">
             <el-icon><House /></el-icon>
          </span>
       </div>
+
+      <div class="btn operator"
+           :class="{active: actives[`-3`], 'btn-left': inRoot}"
+           @mouseenter="handleMouseEnter($event, -3)"
+           @mouseleave="handleMouseLeave($event, -3)"
+           @click="handleBreadClick(-3)"
+           :ref="`btn-3`"
+      >
+         <el-tooltip
+            effect="dark"
+            content="刷新"
+            placement="bottom"
+            offset="-5"
+         >
+            <span style="padding: 20px; font-size: 16px; color: #ffffff;">
+               <el-icon><RefreshLeft /></el-icon>
+            </span>
+         </el-tooltip>
+      </div>
+
+      <div class="btn operator btn-right"
+           :class="{active: actives[`-4`], }"
+           @mouseenter="handleMouseEnter($event, -4)"
+           @mouseleave="handleMouseLeave($event, -4)"
+           @click="handleBreadClick(-4)"
+           :ref="`btn-4`"
+      >
+         <el-tooltip
+            effect="dark"
+            content="同步"
+            placement="bottom"
+            offset="-5"
+         >
+            <span style="padding: 20px; font-size: 16px; color: #ffffff;">
+               <el-icon><Refresh /></el-icon>
+            </span>
+         </el-tooltip>
+      </div>
+
    </div>
 </template>
 
 <script setup>
 // eslint-disable-next-line no-unused-vars
-import {ArrowRight, Back, House} from '@element-plus/icons-vue'
+import {ArrowRight, Back, House, Refresh, RefreshLeft} from '@element-plus/icons-vue'
 </script>
 <script>
 export default {
    name: "LocationBreadcrumb",
    props: {
-      pathElems: {default: ["Root"]}
+      pathElems: {default: ["Root"]},
+      disabled: {type: Boolean, default: false}
    },
    data() {
       return {
@@ -64,11 +102,22 @@ export default {
    },
    methods: {
       handleBreadClick(i) {
-         if (i === -1) {
-            i = this.pathElems.length-2
-         } else if (i === -2) {
-            i = 0
+         if (this.disabled) return
+         switch (i) {
+            case -1:
+               i = this.pathElems.length-2
+               break
+            case -2:
+               i = 0
+               break
+            case -3:
+               this.$emit("refresh")
+               return
+            case -4:
+               this.$emit("reload")
+               return
          }
+
          if (this.pathElems.length-1 <= i) {
             return
          }
@@ -108,6 +157,11 @@ export default {
          return style
       },
    },
+   computed: {
+      inRoot() {
+         return this.pathElems.length === 1
+      }
+   },
    watch: {
       "pathElems.length": {
          handler() {
@@ -116,6 +170,9 @@ export default {
          },
          immediate: true,
       },
+   },
+   mounted() {
+      console.log(this.inRoot)
    }
 }
 </script>
@@ -157,6 +214,22 @@ export default {
 .active {
    /*outline: 1px solid #4690f7;*/
    background-color: #546581;
+}
+
+.btn-left {
+   margin-left: 10px;
+   border-radius: 3px 0px 0px 3px;
+}
+.btn-mid {
+   margin-left: 1px;
+}
+.btn-right {
+   margin-left: 1px;
+   border-radius: 0px 3px 3px 0px;
+}
+.btn-only {
+   margin-left: 10px;
+   border-radius: 3px 3px 3px 3px;
 }
 
 </style>

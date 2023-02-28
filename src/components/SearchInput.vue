@@ -37,7 +37,8 @@ export default {
    props: {
       modelValue: {type: String},
       placeholder: {type: String},
-      maxlength: {type: Number, default: () => 100}
+      maxlength: {type: Number, default: () => 100},
+      disabled: {type: Boolean, default: false},
    },
    data() {
       return {
@@ -48,6 +49,7 @@ export default {
          this.$refs.input.focus()
       },
       handleInputKeyDown(e) {
+         if (this.disabled) {return}
          if (e.key !== 'Enter') {
             return true
          }
@@ -55,9 +57,16 @@ export default {
          return true
       },
       handleSearch() {
+         if (this.disabled) {return}
+
          this.$emit('search')
       },
       handleInput(e) {
+         if (this.disabled) {
+            e.target.value = this.modelValue
+            return
+         }
+
          let val = e.target.value
          this.$emit('update:modelValue', val)
          if (!val) {
@@ -77,6 +86,7 @@ export default {
 
       },
       handleClear() {
+         if (this.disabled) {return}
          this.$emit('update:modelValue', "")
          this.$emit('clear')
          this.$refs.input.focus()

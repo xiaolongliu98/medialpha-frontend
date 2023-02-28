@@ -1,7 +1,10 @@
 <template>
-   <div class="background top-background">
-      <el-button @click="handleReloadAll">ReloadAll</el-button>
-      <el-button @click="handleGetReloadAllStatus">ReloadAllStatus</el-button>
+   <div v-if="taskInfo.name.length">
+      <el-affix :offset="0">
+         <div class="background" style="padding-top: 15px; padding-bottom: 15px">
+            <StatusCard :name="taskInfo.name" @stop="handleStatusStop" v-if="taskInfo.name.length"/>
+         </div>
+      </el-affix>
    </div>
 
    <div style="width: 100%; height: 15px;"/>
@@ -20,6 +23,7 @@
                placeholder="搜索库"
                @search="handleDirListSearch"
                @clear="handleDirListInputClear"
+               :disabled="loadingInfo.dir"
             />
          </el-col>
       </el-row>
@@ -33,7 +37,10 @@
          v-if="dirListStateArgs.code === 0"
          :path-elems="pathElems"
          @switch="handleBreadClick"
+         @refresh="handleBreadRefresh"
+         @reload="handleBreadReload"
          style="margin-left: 20px; font-size: 18px; margin-top: -15px"
+         :disabled="loadingInfo.dir"
       />
 
       <div v-if="dirListStateArgs.code === 1" class="search-data-show" style="margin-bottom: 2px">
@@ -46,11 +53,15 @@
 
       <div style="width: 100%; height: 25px"/>
 
-      <div class="location-outer" v-if="dirListPageInfo.total">
-         <div class="location-inner" @mouseenter="handleDirMouseEnter" @mouseleave="handleDirMouseLeave">
-            <div v-for="loc in dirInfo.dirs" :key="loc.ID" class="location-elem">
-               <LocationCard :location="loc" style="" @enter="handleDirClick"/>
+      <div class="dir-outer" v-loading="loadingInfo.dir" element-loading-background="rgba(122, 122, 122, 0.8)">
+         <div class="dir-inner" @mouseenter="handleDirMouseEnter" @mouseleave="handleDirMouseLeave">
+            <div v-for="d in dirInfo.dirs" :key="d.ID" class="dir-item">
+               <DirCard :dir="d" style="" @enter="handleDirClick"/>
             </div>
+         </div>
+
+         <div class="dir-empty" v-if="!dirListPageInfo.total">
+            <el-image src="defaults/no-dirs.svg" style="height: 120px; "/>
          </div>
       </div>
 
@@ -88,6 +99,7 @@
                placeholder="搜索视频"
                @search="handleVideoListSearch"
                @clear="handleVideoListInputClear"
+               :disabled="loadingInfo.video"
             />
          </el-col>
       </el-row>
@@ -126,7 +138,7 @@
          条视频
 
       </div>
-      <el-row class="video-cards-outer">
+      <el-row class="video-cards-outer" v-loading="loadingInfo.video" element-loading-background="rgba(122, 122, 122, 0.8)">
          <el-col :span="6" v-for="v in videos" :key="v.ID"
                  style="margin-bottom: 40px ;display: grid;justify-content: center">
             <VideoCard :video="v"/>
@@ -147,31 +159,103 @@
          />
       </div>
 
-      <div class="empty" v-if="showVideoListEmpty">
+      <div class="video-empty" v-if="showVideoListEmpty">
          <el-image src="defaults/no-videos.svg" style="height: 180px; "/>
       </div>
 
    </div>
 
+   <el-affix position="bottom" :offset="400">
+      <div class="aside-btns">
+         <DarkButton
+            tip="编辑媒体库"
+            @click="handleEditDir"
+            style="margin-top: 3px"
+            :font-size="20"
+         >
+            <el-icon><FolderAdd /></el-icon>
+         </DarkButton>
+
+         <DarkButton
+            tip="重载媒体库"
+            style="margin-top: 8px"
+            @click="handleReloadAll"
+         >
+            <el-image src="恢复_重置.svg" style="width: 18px; height: 18px"></el-image>
+         </DarkButton>
+
+         <DarkButton
+            @click="handleToTop"
+            style="margin-top: 8px; margin-bottom: 3px"
+            tip="回到顶部"
+            :font-size="16"
+         >
+            <el-icon><ArrowUpBold /></el-icon>
+         </DarkButton>
+
+      </div>
+   </el-affix>
+
+
+   <el-dialog v-model="dialogInfo.dialogTableVisible" title="编辑媒体库" width="650"  >
+      <el-table :data="dialogInfo.baseDirs" border>
+         <el-table-column property="name" label="名称" width="150" />
+         <el-table-column property="path" label="路径" width="300" />
+
+         <el-table-column label="" fixed="right" align="center">
+            <template #default="scope">
+               <el-button
+                  size="small"
+                  type="danger"
+                  @click="handleDelBaseDir(scope.$index, scope.row)"
+               >
+                  删除
+               </el-button>
+            </template>
+         </el-table-column>
+
+         <el-table-column label="" fixed="right" align="center">
+            <template #default="scope">
+               <el-button
+                  size="small"
+                  type="primary"
+                  @click="handleSyncBaseDir(scope.$index, scope.row)"
+               >
+                  同步
+               </el-button>
+            </template>
+         </el-table-column>
+      </el-table>
+
+      <el-row style="margin-top: 30px">
+         <el-col :span="20" style="">
+            输入路径&nbsp; <el-input style="width: 400px" v-model="dialogInfo.dialogTableAddContent"></el-input>
+         </el-col>
+         <el-col :span="4" style="display: flex; justify-content: center; margin-left: -5px">
+            <el-button @click="handleAddBaseDir">添加</el-button>
+         </el-col>
+      </el-row>
+
+   </el-dialog>
 </template>
 
 
 <script setup>
 // eslint-disable-next-line no-unused-vars
-import {Search, ArrowRight} from '@element-plus/icons-vue'
+import {Search, ArrowRight, ArrowUpBold, FolderAdd} from '@element-plus/icons-vue'
 import VideoCard from "@/components/VideoCard";
 import SearchInput from "@/components/SearchInput";
-import LocationCard from "@/components/LocationCard";
+import DirCard from "@/components/DirCard";
 import LocationBreadcrumb from "@/components/LocationBreadcrumb";
+import StatusCard from "@/components/StatusCard";
+import DarkButton from "@/components/DarkButton";
 </script>
 <script>
 // eslint-disable-next-line no-unused-vars
-import deb from 'lodash'
-// eslint-disable-next-line no-unused-vars
 import api from "@/api";
-import {ElMessage, ElMessageBox} from "element-plus";
-import {PAGE_SIZE_VIDEO_LIST, PAGE_SIZE_LOCATION_LIST} from "@/consts";
-import {parsePath} from "@/utils";
+import {ElMessage, ElMessageBox, ElNotification} from "element-plus";
+import {PAGE_SIZE_VIDEO_LIST, PAGE_SIZE_LOCATION_LIST, RESP_OK} from "@/consts";
+import {parsePath, toTop} from "@/utils";
 
 export default {
    name: "MainPage",
@@ -210,7 +294,7 @@ export default {
                //    ID: "219531338682728448",
                //    Name: "Captures",
                //    NumFiles: 0,
-               //    NumSubLocations: 0,
+               //    NumSubDirs: 0,
                //    ParentID: "219531338670145536",
                //    Location: "/Videos/Captures"
                // },
@@ -246,31 +330,147 @@ export default {
          },
 
          wheelInCD: false,
+
+         loadingInfo: {
+            dir: true,
+            video: true,
+         },
+
+         taskInfo: {
+            name: "",
+         },
+
+         dialogInfo: {
+            dialogTableVisible: false,
+            dialogTableAddContent: "",
+            baseDirs: [
+               {name: "Videos", path: "D:/Videos"},
+            ],
+         }
       }
    },
    beforeMount() {
+      // this.loadingInfo.location = false
+      // this.loadingInfo.video = false
       // 获取视频列表
       this.switchVideoListState(0)
       // 获取根目录文件夹
       this.switchDirListState(0)
-
    },
    mounted() {
       // console.log(this.pathElems)
+      // 获取当前后端任务
+      this.getCurrentTask()
    },
    methods: {
-      handleGetReloadAllStatus() {
-         api.common.getReloadAllStatus(
-         ).then((resp) => {
-            if (resp.status !== 200) {
-               if (resp.status !== 200) {
-                  throw new Error(resp.data.message)
-               }
+      handleSyncBaseDir(idx, row) {
+         ElMessageBox.confirm(
+            '在变更的文件量较大的情况下同步磁盘信息需要消耗一定时间，确认继续吗？',
+            'Warning',
+            {
+               confirmButtonText: '继续',
+               cancelButtonText: '取消',
+               type: 'warning',
             }
-            ElMessage.success(resp.data.data.status)
-         }).catch(e => {
+         ).then(()=>{
+            this.syncDirRecursively("/" + row.name)
+            this.dialogInfo.dialogTableVisible = false
+         })
+      },
+      handleAddBaseDir() {
+         if (!this.dialogInfo.dialogTableAddContent || this.dialogInfo.dialogTableAddContent.length <= 0) {
+            ElMessage.warning("路径不能为空！")
+            return
+         }
+         api.common.addBaseDir({
+            localPath: this.dialogInfo.dialogTableAddContent
+         }).then((resp)=>{
+            if (resp.data.code !== RESP_OK) {
+               throw new Error(resp.data.message)
+            }
+            this.dialogInfo.baseDirs = resp.data.data
+            ElMessage.success("添加成功，请手动进行同步")
+         }).catch(e=>{
             ElMessage.error(e.message)
          })
+      },
+      handleDelBaseDir(idx, row) {
+         console.log(idx, row)
+         let path = row.path
+         ElMessageBox.confirm(
+            `确认删除'${path}'媒体库吗？`,
+            'Warning',
+            {
+               confirmButtonText: '确认',
+               cancelButtonText: '取消',
+               type: 'warning',
+            }
+         ).then(()=>{
+            api.common.delBaseDir({
+               localPath: path
+            }).then((resp)=>{
+               if (resp.data.code !== RESP_OK) {
+                  throw new Error(resp.data.message)
+               }
+               this.dialogInfo.baseDirs = resp.data.data
+               ElMessage.success("删除成功")
+               this.handleBreadClick(0, true)
+            }).catch(e=>{
+               ElMessage.error(e.message)
+            })
+         })
+      },
+      handleEditDir() {
+         api.common.getBaseDir(
+         ).then((resp)=>{
+            if (resp.data.code !== RESP_OK) {
+               throw new Error(resp.data.message)
+            }
+            this.dialogInfo.baseDirs = resp.data.data
+         }).catch(e=>{
+            ElMessage.error(e.message)
+         })
+         this.dialogInfo.dialogTableVisible = true
+      },
+      handleToTop() {
+         toTop()
+      },
+      handleStatusStop(info) {
+         console.log(info)
+         if (info.ErrorStr.length) {
+            //
+            ElNotification({
+               type: "error",
+               title: `执行${info.Name}失败`,
+               message: info.ErrorStr,
+               duration: 1000*10,
+            })
+         } else if (info.Returns) {
+            // numDirAdded: 0
+            // numDirRemoved: 0
+            // numVideoAdded: 0
+            // numVideoRemoved
+            let infoStr =
+               ` 新增库：${info.Returns.numDirAdded}<br/>
+                 删除库：${info.Returns.numDirRemoved}<br/>
+                 新增视频：${info.Returns.numVideoAdded}<br/>
+                 删除视频：${info.Returns.numVideoRemoved}<br/>
+                 耗时：${(info.Duration / 1000).toFixed(2)}s
+               `
+            ElNotification({
+               type: "success",
+               title: `执行${info.Name}成功`,
+               message: infoStr,
+               duration: 1000*10,
+               dangerouslyUseHTMLString: true,
+            })
+         }
+         if (this.taskInfo.name.startsWith("SyncDir")) {
+            this.handleBreadRefresh()
+         }
+         setTimeout(()=>{
+            this.taskInfo.name = ""
+         }, 3000)
       },
       handleReloadAll() {
           ElMessageBox.confirm(
@@ -284,12 +484,11 @@ export default {
           ).then(()=>{
              api.common.reloadAll(
              ).then((resp) => {
-                if (resp.status !== 200) {
-                   if (resp.status !== 200) {
-                      throw new Error(resp.data.message)
-                   }
+                if (resp.data.code !== RESP_OK) {
+                   throw new Error(resp.data.message)
                 }
-                ElMessage.success("正在执行中")
+                ElMessage.success("程序启动成功...")
+                this.taskInfo.name = "ReloadAll"
              }).catch(e => {
                 ElMessage.error(e.message)
              })
@@ -360,8 +559,30 @@ export default {
 
          this.switchDirListState(0, true)
       },
-      handleBreadClick(idx) {
-         if (this.pathElems.length - 1 === idx) {
+      handleBreadRefresh() {
+         this.listDirs(0, this.dirInfo.path)
+         // 回到Root，转换状态0
+         if (this.pathElems.length <= 1) {
+            this.switchVideoListState(0, true)
+         } else {
+            this.switchVideoListState(2, true)
+         }
+      },
+      handleBreadReload() {
+         ElMessageBox.confirm(
+            '在变更的文件量较大的情况下同步磁盘信息需要消耗一定时间，确认继续吗？',
+            'Warning',
+            {
+               confirmButtonText: '继续',
+               cancelButtonText: '取消',
+               type: 'warning',
+            }
+         ).then(()=>{
+            this.syncDirRecursively(this.dirInfo.path)
+         })
+      },
+      handleBreadClick(idx, force) {
+         if (this.pathElems.length - 1 === idx && !force) {
             return
          }
          let pathElemsCopy = this.pathElems.slice(1, idx + 1)
@@ -390,7 +611,7 @@ export default {
       },
 
       handleVideoListInputClear() {
-         console.log(this.videoListStateArgs)
+         // console.log(this.videoListStateArgs)
          switch (this.videoListStateArgs.code) {
             case 0:
                break
@@ -449,24 +670,28 @@ export default {
 
       // 获取某一页, page从0开始
       async getVideoListPage(page) {
+         this.loadingInfo.video = true
          try {
             let resp = await api.video.getPage({page: page})
-            if (resp.status !== 200) {
+            if (resp.data.code !== RESP_OK) {
                throw new Error(resp.data.message)
             }
             this.videos = resp.data.data.videos
             this.videoListPageInfo.total = resp.data.data.count
+            this.loadingInfo.video = true
          } catch (e) {
             ElMessage.error(e.message)
          }
+         this.loadingInfo.video = false
       },
       async getVideoListSearch(key, page) {
+         this.loadingInfo.video = true
          if (page === undefined) {
             page = 0
          }
          try {
             let resp = await api.video.searchByName({key, page})
-            if (resp.status !== 200) {
+            if (resp.data.code !== RESP_OK) {
                throw new Error(resp.data.message)
             }
 
@@ -475,23 +700,28 @@ export default {
          } catch (e) {
             ElMessage.error(e.message)
          }
+         this.loadingInfo.video = false
       },
       async listDirs(page, path) {
+         this.loadingInfo.dir = true
          try {
             let resp = await api.dir.listDirs({page, path})
-            if (resp.status !== 200) {
+            if (resp.data.code !== RESP_OK) {
                throw new Error(resp.data.message)
             }
             this.dirInfo.dirs = resp.data.data.dirs
             this.dirListPageInfo.total = resp.data.data.count
+            this.loadingInfo.dir = true
          } catch (e) {
             ElMessage.error(e.message)
          }
+         this.loadingInfo.dir = false
       },
       async getVideoListByPathPage(path, page) {
+         this.loadingInfo.video = true
          try {
             let resp = await api.video.getByVirtualPath({page, path})
-            if (resp.status !== 200) {
+            if (resp.data.code !== RESP_OK) {
                throw new Error(resp.data.message)
             }
             this.videos = resp.data.data.videos
@@ -499,11 +729,13 @@ export default {
          } catch (e) {
             ElMessage.error(e.message)
          }
+         this.loadingInfo.video = false
       },
       async getDirListSearch(key, page) {
+         this.loadingInfo.dir = true
          try {
             let resp = await api.dir.searchDirs({key, page})
-            if (resp.status !== 200) {
+            if (resp.data.code !== RESP_OK) {
                throw new Error(resp.data.message)
             }
 
@@ -512,8 +744,33 @@ export default {
          } catch (e) {
             ElMessage.error(e.message)
          }
+         this.loadingInfo.dir = false
       },
-
+      async getCurrentTask() {
+         try {
+            let resp = await api.common.getCurrentTask({clear: "no"})
+            if (resp.data.code !== RESP_OK) {
+               throw new Error(resp.data.message)
+            }
+            this.taskInfo.name = resp.data.data.Name
+         } catch (e) {
+            ElMessage.error(e.message)
+         }
+      },
+      async syncDirRecursively(path) {
+         try {
+            if (!path) {
+               throw new Error("path 未指定")
+            }
+            let resp = await api.common.syncDirRecursively({path})
+            if (resp.data.code !== RESP_OK) {
+               throw new Error(resp.data.message)
+            }
+            this.taskInfo.name = "SyncDirRecursively"
+         } catch (e) {
+            ElMessage.error(e.message)
+         }
+      },
       switchVideoListState(code, repeat) {
          if (code === this.videoListStateArgs.code && !repeat) {
             return false
@@ -529,6 +786,7 @@ export default {
          switch (code) {
             case 0: {
                this.getVideoListPage()
+               this.videoListPageInfo.curPage = 1
                break
             }
             case 1: {
@@ -617,7 +875,7 @@ export default {
             }
          },
          immediate: true
-      }
+      },
    }
 }
 </script>
@@ -625,7 +883,7 @@ export default {
 <style scoped>
 
 .top-background {
-   border-radius: 0px 0px 5px 5px;
+   border-radius: 5px 5px 5px 5px;
    max-height: 530px;
 }
 
@@ -671,11 +929,11 @@ export default {
 
 .video-cards-outer {
    width: 100%;
-   height: 600px;
+   height: 620px;
    /*outline: 1px skyblue solid;*/
 }
 
-.empty {
+.video-empty {
    position: absolute;
    top: 175px;
    left: 440px;
@@ -687,7 +945,7 @@ export default {
    height: 600px;
 }
 
-.location-outer {
+.dir-outer {
    display: flex;
    justify-content: center;
    align-items: center;
@@ -701,7 +959,7 @@ export default {
    /*outline: 1px violet solid;*/
 }
 
-.location-inner {
+.dir-inner {
    /*width: 100%;*/
    display: flex;
    flex-direction: row;
@@ -726,5 +984,21 @@ export default {
 /*   flex: 1;*/
 /*}*/
 
+.aside-btns {
+   background-color: #4b576e;
+   border-radius: 12px;
+   padding: 5px;
+   width: 60px;
+   height: fit-content;
+   /*outline: 1px solid violet;*/
+   position: absolute;
+   right: -120px;
+
+   display: flex;
+   flex-direction: column;
+
+   justify-content: left;
+   align-items: center;
+}
 
 </style>

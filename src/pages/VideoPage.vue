@@ -41,6 +41,8 @@ import { DArrowLeft } from '@element-plus/icons-vue'
 import {baseURL} from "@/api/request";
 import api from "@/api";
 import {ElMessage} from "element-plus";
+import {RESP_OK} from "@/consts";
+import {toTop} from "@/utils";
 
 export default {
    name: "VideoPage",
@@ -66,9 +68,9 @@ export default {
    },
    methods: {
       async getVideo() {
-         let resp = await api.video.get({id: this.id})
          try {
-            if (resp.status !== 200) {
+            let resp = await api.video.get({id: this.id})
+            if (resp.data.code !== RESP_OK) {
                throw new Error(resp.data.message)
             }
             this.videoInfo = resp.data.data
@@ -78,7 +80,8 @@ export default {
       },
 
       handleReturn() {
-         this.$router.go(-1)
+         // this.$router.go(-1)
+         this.$router.push("/main")
       },
 
    },
@@ -87,6 +90,7 @@ export default {
    },
    mounted() {
       console.log("@@", this.videoType)
+      toTop()
    },
    computed: {
       id() {

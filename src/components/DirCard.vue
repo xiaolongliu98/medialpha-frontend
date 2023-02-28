@@ -5,12 +5,13 @@
 
    >
 
-      <el-image src="dir7.svg" class="dir" @click="handleClick"/>
-      <div class="dot-info-file" v-show="location.NumFiles!==0 || location.NumSubLocations!==0">
-         {{location.NumFiles > 99 ? "99+" : location.NumFiles}}
+      <el-image src="dir.svg" class="dir" @click="handleClick" v-if="dir.NumFiles > 0 || dir.NumSubDirs > 0"/>
+      <el-image src="dir-empty.svg" class="dir" @click="handleClick" v-else/>
+      <div class="dot-info-file" v-show="dir.NumFiles!==0 || dir.NumSubDirs!==0">
+         {{ dir.NumFiles > 99 ? "99+" : dir.NumFiles }}
       </div>
-      <div class="dot-info-loc" v-show="location.NumSubLocations!==0">
-         {{location.NumSubLocations > 99 ? "99+" : location.NumSubLocations}}
+      <div class="dot-info-loc" v-show="dir.NumSubDirs!==0">
+         {{ dir.NumSubDirs > 99 ? "99+" : dir.NumSubDirs }}
       </div>
 
       <el-popover
@@ -19,13 +20,13 @@
          title=""
          :width="128"
          trigger="hover"
-         :content="location.Name"
+         :content="dir.Name"
          :show-arrow="false"
          popper-style="background-color: #202124; border: 0px; color: white; text-align: center"
       >
          <template #reference>
             <div class="title">
-               {{location.Name}}
+               {{ dir.Name }}
             </div>
          </template>
       </el-popover>
@@ -35,14 +36,14 @@
 
 <script>
 export default {
-   name: "LocationCard",
+   name: "DirCard",
    props: {
-      location: {
+      dir: {
          default: {
             ID: "0",
             Name: "undefined",
             NumFiles: 0,
-            NumSubLocations: 0,
+            NumSubDirs: 0,
             ParentID: "0",
             Location: "undefined"
          }
@@ -56,11 +57,11 @@ export default {
          this.$refs.outer.style.backgroundColor = ""
       },
       handleClick() {
-         this.$emit("enter", this.location.Location)
+         this.$emit("enter", this.dir.Location)
       },
 
       dotInfoTopLoc() {
-         if (this.location.NumFiles===0) {
+         if (this.dir.NumFiles===0) {
             return "20px"
          }
          return "50px"

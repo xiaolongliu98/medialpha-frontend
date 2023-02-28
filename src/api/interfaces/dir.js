@@ -1,4 +1,6 @@
 import req from "@/api/request";
+// eslint-disable-next-line no-unused-vars
+import {Base64} from "js-base64";
 
 // @query page, path optional
 // @router /dir/list GET
@@ -9,6 +11,7 @@ export function listDirs({page, path}) {
     if (path === undefined) {
         path = ""
     }
+    path = Base64.encode(path)
 
     return req({
         method: 'GET',
@@ -25,9 +28,12 @@ export function searchDirs({page, key}) {
     if (key === undefined) {
         key = ""
     }
-
+    key = Base64.encode(key)
     return req({
         method: 'GET',
         url: `/dir/search?key=${key}&page=${page}`,
     })
 }
+
+
+

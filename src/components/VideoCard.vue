@@ -45,6 +45,8 @@
 import {baseURL} from "@/api/request";
 // eslint-disable-next-line no-unused-vars
 import {formatSize, parseSeconds} from "@/utils";
+// eslint-disable-next-line no-unused-vars
+import {Base64} from "js-base64";
 
 export default {
    name: "VideoCard",
@@ -76,15 +78,26 @@ export default {
    },
    methods: {
       handleClick() {
-         this.$router.push("/video/" + this.video.ID)
+         let newPage = this.$router.resolve({
+            path: "/video/" + this.video.ID,
+            query:{
+            }
+         })
+         window.open(newPage.href, '_blank');
+
+         // this.$router.push()
       },
    },
    computed: {
       coverURL() {
-         if (!this.video.ID) {
+         if (!this.video.ID || !this.video.ID.length) {
             return ""
          }
-         return `${baseURL}/common/cover?name=${this.video.Name}&location=${this.video.Location}`
+         let name = Base64.encode(this.video.Name)
+         let loc = Base64.encode(this.video.Location)
+         // let name = this.video.Name
+         // let loc = this.video.Location
+         return `${baseURL}/common/cover?name=${name}&location=${loc}`
       },
       formatSize() {
          return formatSize(this.video.Size)

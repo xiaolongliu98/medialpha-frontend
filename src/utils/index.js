@@ -81,3 +81,6 @@ export function parsePath(path, rootName) {
     return pathElems
 }
 
+export function toTop() {
+    document.documentElement.scrollTop = 0;
+}

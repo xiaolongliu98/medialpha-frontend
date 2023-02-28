@@ -1,4 +1,6 @@
 import req from "@/api/request";
+// eslint-disable-next-line no-unused-vars
+import {Base64} from "js-base64";
 
 export function getPage({page}) {
     if (page === undefined) {
@@ -24,6 +26,7 @@ export function searchByName({key, page}) {
     if (page === undefined) {
         page = 0
     }
+    key = Base64.encode(key)
     return req({
         method: 'GET',
         url: `/video/search?key=${key}&page=${page}`,
@@ -36,6 +39,7 @@ export function getByVirtualPath({path, page}) {
     if (page === undefined) {
         page = 0
     }
+    path = Base64.encode(path)
     return req({
         method: 'GET',
         url: `/dir/videos?path=${path}&page=${page}`,
